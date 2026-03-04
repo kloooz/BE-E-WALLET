@@ -13,6 +13,8 @@ class Transaction extends Model
         'amount',
         'reference_id',
         'description',
+        'status',
+        'snap_token',
     ];
 
     /**

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\ForgotPasswordRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Services\AuthService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -41,6 +43,32 @@ class AuthController
             return $this->error('Invalid credentials', null, 401);
         }
         return $this->success('Login successful', ['token' => $token->plainTextToken]);
+    }
+
+    /**
+     * Handle a forgot password request.
+     */
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $result = $this->authService->forgotPassword($data);
+
+        return $this->success('Password reset token generated', $result);
+    }
+
+    /**
+     * Handle a reset password request.
+     */
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $success = $this->authService->resetPassword($data);
+
+        if (!$success) {
+            return $this->error('Invalid token or email', null, 400);
+        }
+
+        return $this->success('Password has been successfully reset');
     }
 }
 ?>

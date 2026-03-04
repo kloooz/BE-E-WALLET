@@ -9,6 +9,8 @@ use App\Services\TransferService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TopUpSuccessMail;
 
 class WalletController
 {
@@ -16,11 +18,13 @@ class WalletController
 
     protected $walletService;
     protected $transferService;
+    protected $midtransService;
 
-    public function __construct(WalletService $walletService, TransferService $transferService)
+    public function __construct(WalletService $walletService, TransferService $transferService, \App\Services\MidtransService $midtransService)
     {
         $this->walletService = $walletService;
         $this->transferService = $transferService;
+        $this->midtransService = $midtransService;
     }
 
     /**
@@ -34,14 +38,31 @@ class WalletController
     }
 
     /**
-     * Top up wallet balance.
+     * Top up wallet balance (initiates Midtrans payment).
      */
     public function topUp(TopUpRequest $request): JsonResponse
     {
         $user = Auth::user();
         $amount = (int) $request->validated()['amount'];
         $transaction = $this->walletService->topUp($user, $amount);
-        return $this->success('Top up successful', ['transaction' => $transaction], 201);
+        
+        try {
+            $snapToken = $this->midtransService->generateSnapToken($transaction, $user);
+            
+            // Save snap token to transaction
+            $transaction->snap_token = $snapToken;
+            $transaction->save();
+
+            return $this->success('Top up initiated', [
+                'transaction' => $transaction,
+                'snap_token' => $snapToken
+            ], 201);
+        } catch (\Exception $e) {
+            // If failed to generate token, we might want to fail the transaction
+            $transaction->status = 'failed';
+            $transaction->save();
+            return $this->error('Failed to generate Midtrans snap token: ' . $e->getMessage(), null, 400);
+        }
     }
 
     /**
