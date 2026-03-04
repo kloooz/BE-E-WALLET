@@ -18,10 +18,12 @@ Route::post('webhook/midtrans', [WebhookController::class, 'midtransHandler']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('me', [AuthController::class, 'me']);
     Route::get('balance', [WalletController::class, 'balance']);
     Route::post('topup', [WalletController::class, 'topUp']);
     Route::post('transfer', [WalletController::class, 'transfer']);
     Route::get('transactions', [TransactionController::class, 'index']);
+    Route::post('pin', [AuthController::class, 'updatePin']);
     
     // QR endpoints
     Route::get('dummy-qr', [QrPaymentController::class, 'generateDummyQr']);

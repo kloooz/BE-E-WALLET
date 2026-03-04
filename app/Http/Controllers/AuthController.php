@@ -23,6 +23,15 @@ class AuthController
     }
 
     /**
+     * Get the authenticated User.
+     */
+    public function me(): JsonResponse
+    {
+        $user = auth()->user();
+        return $this->success('User profile retrieved successfully', ['user' => $user]);
+    }
+
+    /**
      * Register a new user.
      */
     public function register(RegisterRequest $request): JsonResponse
@@ -69,6 +78,22 @@ class AuthController
         }
 
         return $this->success('Password has been successfully reset');
+    }
+
+    /**
+     * Update user pin.
+     */
+    public function updatePin(Request $request): JsonResponse
+    {
+        $request->validate([
+            'pin' => 'required|string|digits:6',
+        ]);
+
+        $user = auth()->user();
+        $user->pin = \Illuminate\Support\Facades\Hash::make($request->pin);
+        $user->save();
+
+        return $this->success('PIN has been successfully updated');
     }
 }
 ?>

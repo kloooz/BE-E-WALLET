@@ -33,6 +33,19 @@ class User extends Authenticatable
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     */
+    protected $appends = ['has_pin'];
+
+    /**
+     * Determine if the user has a PIN set.
+     */
+    public function getHasPinAttribute()
+    {
+        return !empty($this->attributes['pin']);
+    }
+
+    /**
      * Get the wallet associated with the user.
      */
     public function wallet(): HasOne
