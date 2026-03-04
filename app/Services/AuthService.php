@@ -28,6 +28,7 @@ class AuthService
             'email'    => $data['email'],
             'phone'    => $data['phone'],
             'password' => Hash::make($data['password']),
+            'pin'      => Hash::make($data['pin']),
         ]);
 
         // Create wallet with zero balance

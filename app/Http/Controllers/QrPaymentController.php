@@ -49,6 +49,12 @@ class QrPaymentController
     {
         $user = Auth::user();
         $qrCode = $request->validated()['qr_code'];
+        $pin = $request->validated()['pin'];
+
+        // Verify PIN
+        if (!\Illuminate\Support\Facades\Hash::check($pin, $user->pin)) {
+            return $this->error('Invalid PIN', null, 401);
+        }
 
         // Decode the QR Code
         $decodedData = json_decode(base64_decode($qrCode), true);

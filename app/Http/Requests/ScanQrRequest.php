@@ -22,7 +22,8 @@ class ScanQrRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'qr_code' => ['required', 'string']
+            'qr_code' => ['required', 'string'],
+            'pin'     => ['required', 'string', 'size:6'],
         ];
     }
 }

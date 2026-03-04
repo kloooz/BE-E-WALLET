@@ -14,10 +14,12 @@ Endpoint to register a new user and automatically create their wallet.
 - **Body (JSON):**
   ```json
   {
-      "name": "John Doe",
+      "username": "johndoe",
       "email": "johndoe@example.com",
+      "phone": "081234567890",
       "password": "password123",
-      "password_confirmation": "password123"
+      "password_confirmation": "password123",
+      "pin": "123456"
   }
   ```
 - **Response (201 Created):**
@@ -263,7 +265,8 @@ Endpoint to process a payment using a scanned QR code string.
 - **Body (JSON):**
   ```json
   {
-      "qr_code": "base64_encoded_string_here..."
+      "qr_code": "base64_encoded_string_here...",
+      "pin": "123456"
   }
   ```
 - **Response (200 OK):**
