@@ -2,6 +2,8 @@
 
 Base URL: `http://localhost:8000/api`
 
+---
+
 ## Authentication
 
 ### 1. Register
@@ -12,9 +14,8 @@ Endpoint to register a new user and automatically create their wallet.
 - **Body (JSON):**
   ```json
   {
-      "username": "johndoe",
+      "name": "John Doe",
       "email": "johndoe@example.com",
-      "phone": "081234567890",
       "password": "password123",
       "password_confirmation": "password123"
   }
@@ -23,8 +24,9 @@ Endpoint to register a new user and automatically create their wallet.
   ```json
   {
       "success": true,
-      "message": "Registration successful",
+      "message": "User registered successfully",
       "data": {
+          "user": { ... },
           "token": "1|abcdef..."
       }
   }
@@ -48,6 +50,7 @@ Endpoint to authenticate a user and get an access token.
       "success": true,
       "message": "Login successful",
       "data": {
+          "user": { ... },
           "token": "2|abcdef..."
       }
   }
@@ -68,11 +71,8 @@ Endpoint to generate a password reset token.
   ```json
   {
       "success": true,
-      "message": "Password reset token generated",
-      "data": {
-          "token": "random_60_char_token",
-          "message": "Reset token generated (Usually sent to email)"
-      }
+      "message": "Password reset email sent",
+      "data": null
   }
   ```
 
@@ -94,18 +94,43 @@ Endpoint to reset the user's password using the generated token.
   ```json
   {
       "success": true,
-      "message": "Password has been successfully reset",
-      "data": []
+      "message": "Password reset successfully",
+      "data": null
+  }
+  ```
+
+---
+
+## Public (Webhook) Endpoints
+
+### 5. Midtrans Webhook
+Endpoint to receive server-to-server notifications from Midtrans regarding payment status updates.
+
+- **URL:** `/webhook/midtrans`
+- **Method:** `POST`
+- **Body (JSON):** *(Sent by Midtrans)*
+  ```json
+  {
+      "order_id": "TOP_1711234567_1234",
+      "transaction_status": "settlement",
+      "gross_amount": "100000.00",
+      ...
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+      "message": "Webhook processed successfully"
   }
   ```
 
 ---
 
 ## Protected Endpoints
-> Note: All subsequent endpoints require an `Authorization` header with a valid bare token:
+> Note: All subsequent endpoints require an `Authorization` header with a valid bearer token:
 > `Authorization: Bearer <your_token>`
 
-### 5. Check Balance
+### 6. Check Balance
 Endpoint to retrieve the current wallet balance.
 
 - **URL:** `/balance`
@@ -114,15 +139,15 @@ Endpoint to retrieve the current wallet balance.
   ```json
   {
       "success": true,
-      "message": "Balance retrieved successfully",
+      "message": "Balance retrieved",
       "data": {
           "balance": 500000
       }
   }
   ```
 
-### 6. Top Up Balance
-Endpoint to add balance to the user's wallet.
+### 7. Top Up Balance (Midtrans Integration)
+Endpoint to initiate a top-up transaction and generate a Midtrans Snap token.
 
 - **URL:** `/topup`
 - **Method:** `POST`
@@ -132,18 +157,29 @@ Endpoint to add balance to the user's wallet.
       "amount": 100000
   }
   ```
-- **Response (200 OK):**
+- **Response (201 Created):**
   ```json
   {
       "success": true,
-      "message": "Top up successful",
+      "message": "Top up initiated",
       "data": {
-          "balance": 600000
+          "transaction": {
+              "id": 1,
+              "user_id": 1,
+              "type": "topup",
+              "amount": 100000,
+              "status": "pending",
+              "snap_token": "token_string_here...",
+              "reference_id": "TOP_1711234567_1234",
+              "description": "Top up balance via Midtrans"
+          },
+          "snap_token": "token_string_here..."
       }
   }
   ```
+  *(Note: Actual balance will be added when Midtrans sends the success webhook)*
 
-### 7. Transfer Balance
+### 8. Transfer Balance
 Endpoint to transfer balance to another user's wallet.
 
 - **URL:** `/transfer`
@@ -151,25 +187,23 @@ Endpoint to transfer balance to another user's wallet.
 - **Body (JSON):**
   ```json
   {
-      "to_username": "janedoe",
+      "identifier": "janedoe@example.com",
       "amount": 50000
   }
   ```
-- **Response (200 OK):**
+- **Response (201 Created):**
   ```json
   {
       "success": true,
       "message": "Transfer successful",
       "data": {
-          "balance": 550000,
-          "transferred": 50000,
-          "to": "janedoe"
+          "transaction": { ... }
       }
   }
   ```
 
-### 8. Transaction History
-Endpoint to retrieve the current user's transaction history (both top-ups and transfers).
+### 9. Transaction History
+Endpoint to retrieve the current user's transaction history (top-ups, transfers, payments).
 
 - **URL:** `/transactions`
 - **Method:** `GET`
@@ -177,31 +211,79 @@ Endpoint to retrieve the current user's transaction history (both top-ups and tr
   ```json
   {
       "success": true,
-      "message": "Transactions retrieved successfully",
+      "message": "Transactions retrieved",
       "data": [
           {
               "id": 1,
-              "wallet_id": 1,
               "type": "topup",
-              "amount": "100000.00",
-              "description": "Top Up",
+              "amount": 100000,
+              "status": "success",
+              "description": "Top up balance via Midtrans",
               "created_at": "2024-03-02T10:00:00.000000Z"
           },
           {
               "id": 2,
-              "wallet_id": 1,
-              "type": "transfer",
-              "amount": "-50000.00",
-              "description": "Transfer to janedoe",
+              "type": "payment",
+              "amount": 15000,
+              "status": "success",
+              "description": "Payment to Warteg Berkah",
               "created_at": "2024-03-02T10:05:00.000000Z"
           }
       ]
   }
   ```
 
-## Dummy Data for Testing
-For testing, a seed has been provided via `php artisan db:seed`:
-- **Username:** `testuser`
-- **Email:** `test@example.com`
-- **Password:** `password`
-- **Wallet Balance:** `0`
+### 10. Generate Dummy QR
+Endpoint to generate a dummy QR Code string for testing the Scan QR Payment feature.
+
+- **URL:** `/dummy-qr`
+- **Method:** `GET`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Dummy QR generated",
+      "data": {
+          "qr_string": "base64_encoded_string_here...",
+          "decoded_data": {
+              "merchant_id": "MCH-12345",
+              "merchant_name": "Warteg Berkah",
+              "amount": 15000,
+              "transaction_id": "QR_1711234567123"
+          }
+      }
+  }
+  ```
+
+### 11. Scan QR Payment
+Endpoint to process a payment using a scanned QR code string.
+
+- **URL:** `/scan-qr`
+- **Method:** `POST`
+- **Body (JSON):**
+  ```json
+  {
+      "qr_code": "base64_encoded_string_here..."
+  }
+  ```
+- **Response (200 OK):**
+  *(Deducts wallet balance and triggers "Payment Successful" email)*
+  ```json
+  {
+      "success": true,
+      "message": "Payment successful",
+      "data": {
+          "transaction": {
+              "id": 3,
+              "user_id": 1,
+              "type": "payment",
+              "amount": 15000,
+              "status": "success",
+              "reference_id": "QR_1711234567123",
+              "description": "Payment to Warteg Berkah"
+          }
+      }
+  }
+  ```
+
+---
