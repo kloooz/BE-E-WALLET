@@ -25,7 +25,7 @@ class AuthController
     /**
      * Get the authenticated User.
      */
-    public function me(): JsonResponse
+    public function getProfile(): JsonResponse
     {
         $user = auth()->user();
         return $this->success('User profile retrieved successfully', ['user' => $user]);
@@ -94,6 +94,23 @@ class AuthController
         $user->save();
 
         return $this->success('PIN has been successfully updated');
+    }
+    /**
+     * Update user profile information.
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'username' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'phone' => 'sometimes|string|max:20',
+        ]);
+
+        $user->update($request->only(['username', 'email', 'phone']));
+
+        return $this->success('Profile updated successfully', ['user' => $user->fresh()]);
     }
 }
 ?>

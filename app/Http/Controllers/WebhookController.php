@@ -52,7 +52,14 @@ class WebhookController extends Controller
         }
 
         if ($transactionStatus == 'capture' || $transactionStatus == 'settlement') {
-            // Provide Topup
+            // Update description with payment method if available
+            $paymentType = $payload['payment_type'] ?? null;
+            if ($paymentType) {
+                $transaction->description = 'Top up balance via ' . ucwords(str_replace('_', ' ', $paymentType));
+                // Do not call save() here, it causes race conditions with completeTopUp
+            }
+
+            // Provide Topup (this function will lock and save the transaction status internally)
             $this->walletService->completeTopUp($transaction);
             
             // Send email

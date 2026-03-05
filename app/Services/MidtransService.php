@@ -34,8 +34,14 @@ class MidtransService
                 'gross_amount' => $transaction->amount,
             ],
             'customer_details' => [
-                'first_name' => $user->name,
+                'first_name' => str_replace(' ', '', $user->username), // some names have issues if we don't ensure it
                 'email' => $user->email,
+                'phone' => $user->phone ?? '081234567890', // Dana requires a phone number
+            ],
+            'callbacks' => [
+                'finish' => 'http://localhost:5173/payment/finish',
+                'unfinish' => 'http://localhost:5173/payment/unfinish',
+                'error' => 'http://localhost:5173/payment/error',
             ],
         ];
 

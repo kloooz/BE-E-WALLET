@@ -102,5 +102,28 @@ class WalletService
             ]);
         });
     }
+    public function purchasePromo(User $user, string $promoId, string $promoTitle, int $amount): Transaction
+    {
+        return DB::transaction(function () use ($user, $promoId, $promoTitle, $amount) {
+            $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->first();
+            
+            if (!$wallet || $wallet->balance < $amount) {
+                throw new \Exception('Insufficient balance for this purchase.');
+            }
+
+            $wallet->balance -= $amount;
+            $wallet->save();
+
+            // Create a payment transaction record
+            return Transaction::create([
+                'user_id' => $user->id,
+                'type'    => 'payment',
+                'amount'  => $amount,
+                'reference_id' => 'PRM_' . $promoId . '_' . time(),
+                'description' => 'Voucher - ' . $promoTitle,
+                'status'  => 'success',
+            ]);
+        });
+    }
 }
 ?>

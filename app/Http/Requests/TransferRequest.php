@@ -16,6 +16,7 @@ class TransferRequest extends FormRequest
         return [
             'identifier' => 'required', // email or phone
             'amount' => 'required|integer|min:1',
+            'pin' => 'required|string|size:6',
         ];
     }
 
@@ -26,6 +27,8 @@ class TransferRequest extends FormRequest
             'amount.required' => 'Nominal tidak boleh kosong.',
             'amount.integer' => 'Nominal harus berupa angka.',
             'amount.min' => 'Nominal harus minimal 1.',
+            'pin.required' => 'PIN tidak boleh kosong.',
+            'pin.size' => 'PIN harus 6 digit.',
         ];
     }
 }

@@ -24,20 +24,21 @@ class TransferService
     public function transfer(User $sender, string $identifier, int $amount): array
     {
         // Prevent self-transfer
-        if ($sender->email === $identifier || $sender->phone === $identifier) {
+        if ($sender->email === $identifier || $sender->phone === $identifier || $sender->username === $identifier) {
             throw new Exception('Cannot transfer to self');
         }
 
-        // Find receiver by email or phone
+        // Find receiver by email, phone, or username
         $receiver = User::where('email', $identifier)
             ->orWhere('phone', $identifier)
+            ->orWhere('username', $identifier)
             ->first();
 
         if (!$receiver) {
             throw new Exception('Receiver not found');
         }
 
-        return DB::transaction(function () use ($sender, $receiver, $amount) {
+        return DB::transaction(function () use ($sender, $receiver, $amount, $identifier) {
             // Lock both wallets for update to avoid race conditions
             $senderWallet = Wallet::where('user_id', $sender->id)->lockForUpdate()->first();
             $receiverWallet = Wallet::where('user_id', $receiver->id)->lockForUpdate()->first();

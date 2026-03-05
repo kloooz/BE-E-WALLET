@@ -49,7 +49,10 @@ class AuthService
      */
     public function login(array $data)
     {
-        $credentials = ['email' => $data['email'], 'password' => $data['password']];
+        $identifier = $data['identifier'];
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $credentials = [$field => $identifier, 'password' => $data['password']];
         if (!Auth::attempt($credentials)) {
             return null;
         }

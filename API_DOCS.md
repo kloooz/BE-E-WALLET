@@ -132,6 +132,30 @@ Endpoint to receive server-to-server notifications from Midtrans regarding payme
 > Note: All subsequent endpoints require an `Authorization` header with a valid bearer token:
 > `Authorization: Bearer <your_token>`
 
+### 6. Get User Profile
+Endpoint to retrieve the authenticated user's profile information.
+
+- **URL:** `/profile`
+- **Method:** `GET`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "User profile retrieved successfully",
+      "data": {
+          "user": {
+              "id": 1,
+              "username": "johndoe",
+              "email": "johndoe@example.com",
+              "phone": "081234567890",
+              "email_verified_at": null,
+              "created_at": "2024-03-02T10:00:00.000000Z",
+              "updated_at": "2024-03-02T10:00:00.000000Z"
+          }
+      }
+  }
+  ```
+
 ### 6. Check Balance
 Endpoint to retrieve the current wallet balance.
 
