@@ -46,12 +46,14 @@ class AuthController
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $token = $this->authService->login($data);
-        if (!$token) {
-            return $this->error('Invalid credentials', null, 401);
+        $data   = $request->validated();
+        $result = $this->authService->login($data);
+
+        if (!$result['success']) {
+            return $this->error($result['message'], null, 401);
         }
-        return $this->success('Login successful', ['token' => $token->plainTextToken]);
+
+        return $this->success('Login successful', ['token' => $result['token']->plainTextToken]);
     }
 
     /**

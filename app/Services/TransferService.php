@@ -65,7 +65,7 @@ class TransferService
                 'type'         => 'transfer_out',
                 'amount'       => $amount,
                 'reference_id' => $referenceId,
-                'description'  => 'Transfer to ' . $identifier,
+                'description'  => 'Transfer to ' . $receiver->username,
             ]);
 
             // Incoming transaction for receiver
@@ -74,7 +74,7 @@ class TransferService
                 'type'         => 'transfer_in',
                 'amount'       => $amount,
                 'reference_id' => $referenceId,
-                'description'  => 'Transfer from ' . $sender->email,
+                'description'  => 'Transfer from ' . $sender->username,
             ]);
 
             return ['outgoing' => $outgoing, 'incoming' => $incoming];

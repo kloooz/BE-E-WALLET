@@ -14,7 +14,7 @@ class TopUpRequest extends FormRequest
     public function rules()
     {
         return [
-            'amount' => 'required|integer|min:1',
+            'amount' => 'required|integer|min:1|max:50000000',
         ];
     }
 
@@ -23,7 +23,8 @@ class TopUpRequest extends FormRequest
         return [
             'amount.required' => 'Nominal tidak boleh kosong.',
             'amount.integer' => 'Nominal harus berupa angka.',
-            'amount.min' => 'Nominal harus minimal 1.',
+            'amount.min'     => 'Nominal tidak boleh negatif atau nol.',
+            'amount.max'     => 'Nominal melebihi batas maksimum transaksi.',
         ];
     }
 }

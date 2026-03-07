@@ -16,9 +16,10 @@ class AuthTest extends TestCase
     {
         $response = $this->postJson('/api/register', [
             'username' => 'testuser',
-            'email' => 'test@example.com',
-            'phone' => '08123456789',
+            'email'    => 'test@example.com',
+            'phone'    => '08123456789',
             'password' => 'password123',
+            'pin'      => '123456',
         ]);
 
         $response->assertStatus(201)
@@ -32,11 +33,10 @@ class AuthTest extends TestCase
     {
         $user = User::factory()->create(['password' => bcrypt('secret')]);
         $response = $this->postJson('/api/login', [
-            'email' => $user->email,
-            'password' => 'secret',
+            'identifier' => $user->email, // LoginRequest uses 'identifier' (email or phone)
+            'password'   => 'secret',
         ]);
         $response->assertStatus(200)
                  ->assertJsonStructure(['success', 'message', 'data' => ['token']]);
     }
 }
-?>

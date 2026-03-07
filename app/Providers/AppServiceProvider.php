@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Limit PHP socket timeout so SMTP connection failures throw a catchable
+        // Exception instead of a PHP Fatal Error (max_execution_time exceeded).
+        ini_set('default_socket_timeout', 10);
     }
 }

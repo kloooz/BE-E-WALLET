@@ -34,12 +34,12 @@ class WalletService
         return DB::transaction(function () use ($user, $amount) {
             // Create a pending top‑up transaction record
             return Transaction::create([
-                'user_id' => $user->id,
-                'type'    => 'topup',
-                'amount'  => $amount,
-                'reference_id' => 'TOP_' . time() . '_' . rand(1000, 9999),
-                'description' => 'Top up balance via Midtrans',
-                'status'  => 'pending',
+                'user_id'      => $user->id,
+                'type'         => 'topup',
+                'amount'       => $amount,
+                'reference_id' => 'TOP-' . (string) \Illuminate\Support\Str::uuid(),
+                'description'  => 'Top up balance via Midtrans',
+                'status'       => 'pending',
             ]);
         });
     }

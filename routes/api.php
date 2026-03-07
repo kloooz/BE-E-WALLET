@@ -16,6 +16,10 @@ Route::post('reset-password', [AuthController::class, 'resetPassword']);
 // Webhook routes
 Route::post('webhook/midtrans', [WebhookController::class, 'midtransHandler']);
 
+// Payment finish callback — public (called by Midtrans redirect after e-wallet payment)
+// Auto-verifies transaction status then redirects to frontend
+Route::get('payment/finish', [TransactionController::class, 'paymentFinish']);
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile', [AuthController::class, 'getProfile']);
@@ -25,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('purchase', [WalletController::class, 'purchase']);
     Route::get('transactions', [TransactionController::class, 'index']);
     Route::post('transactions/{id}/verify', [TransactionController::class, 'verify']);
+    Route::get('transactions/{id}/verify', [TransactionController::class, 'verify']);
     Route::post('pin', [AuthController::class, 'updatePin']);
     Route::put('profile', [AuthController::class, 'updateProfile']);
     

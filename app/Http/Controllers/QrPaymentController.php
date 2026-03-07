@@ -7,6 +7,7 @@ use App\Services\WalletService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Mail\PaymentSuccessMail;
 use Illuminate\Support\Facades\Mail;
 
@@ -65,13 +66,17 @@ class QrPaymentController
 
         try {
             $transaction = $this->walletService->qrPayment($user, $decodedData);
-
-            // Send Email Notification
-            Mail::to($user->email)->send(new PaymentSuccessMail($user, $transaction));
-
-            return $this->success('Payment successful', ['transaction' => $transaction], 200);
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), null, 400);
         }
+
+        // Send email in separate try-catch so SMTP timeout doesn't block the response
+        try {
+            Mail::to($user->email)->send(new PaymentSuccessMail($user, $transaction));
+        } catch (\Exception $e) {
+            Log::warning('Gagal mengirim email PaymentSuccess: ' . $e->getMessage());
+        }
+
+        return $this->success('Payment successful', ['transaction' => $transaction], 200);
     }
 }

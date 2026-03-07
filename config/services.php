@@ -36,9 +36,11 @@ return [
     ],
 
     'midtrans' => [
-        'server_key' => env('MIDTRANS_SERVER_KEY'),
-        'client_key' => env('MIDTRANS_CLIENT_KEY'),
-        'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+        'server_key'       => env('MIDTRANS_SERVER_KEY'),
+        'client_key'       => env('MIDTRANS_CLIENT_KEY'),
+        'is_production'    => env('MIDTRANS_IS_PRODUCTION', false),
+        'frontend_url'     => env('MIDTRANS_FRONTEND_URL', 'http://localhost:5173'),
+        'notification_url' => env('MIDTRANS_NOTIFICATION_URL'),
     ],
 
 ];

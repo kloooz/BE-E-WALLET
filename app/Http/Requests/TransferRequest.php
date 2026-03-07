@@ -14,9 +14,9 @@ class TransferRequest extends FormRequest
     public function rules()
     {
         return [
-            'identifier' => 'required', // email or phone
-            'amount' => 'required|integer|min:1',
-            'pin' => 'required|string|size:6',
+            'identifier' => 'required|string',
+            'amount'     => 'required|integer|min:1|max:50000000',
+            'pin'        => 'required|string|size:6',
         ];
     }
 
@@ -24,11 +24,13 @@ class TransferRequest extends FormRequest
     {
         return [
             'identifier.required' => 'Penerima tidak boleh kosong.',
-            'amount.required' => 'Nominal tidak boleh kosong.',
-            'amount.integer' => 'Nominal harus berupa angka.',
-            'amount.min' => 'Nominal harus minimal 1.',
-            'pin.required' => 'PIN tidak boleh kosong.',
-            'pin.size' => 'PIN harus 6 digit.',
+            'identifier.string'   => 'Format penerima tidak valid.',
+            'amount.required'     => 'Nominal tidak boleh kosong.',
+            'amount.integer'      => 'Nominal harus berupa angka.',
+            'amount.min'          => 'Nominal tidak boleh negatif atau nol.',
+            'amount.max'          => 'Nominal melebihi batas maksimum transaksi.',
+            'pin.required'        => 'PIN tidak boleh kosong.',
+            'pin.size'            => 'PIN harus 6 digit.',
         ];
     }
 }

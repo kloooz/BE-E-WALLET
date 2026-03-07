@@ -9,10 +9,15 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     * Changes reference_id from BIGINT to VARCHAR(255) to support UUID/string refs.
+     * MySQL-only: SQLite is dynamically typed, column already accepts strings.
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE transactions MODIFY reference_id VARCHAR(255) NULL;');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE transactions MODIFY reference_id VARCHAR(255) NULL;');
+        }
+        // SQLite: no-op — already stores strings without type enforcement
     }
 
     /**
@@ -20,6 +25,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE transactions MODIFY reference_id BIGINT UNSIGNED NULL;');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE transactions MODIFY reference_id BIGINT UNSIGNED NULL;');
+        }
     }
 };

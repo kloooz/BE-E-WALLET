@@ -10,6 +10,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TopUpSuccessMail;
 
@@ -46,27 +47,31 @@ class WalletController
         $user = Auth::user();
         $amount = (int) $request->validated()['amount'];
         $transaction = $this->walletService->topUp($user, $amount);
-        
+
         try {
             $snapToken = $this->midtransService->generateSnapToken($transaction, $user);
-            
+
             // Save snap token to transaction
             $transaction->snap_token = $snapToken;
             $transaction->save();
-            
-            // Send pending email with Snap Link
-            Mail::to($user->email)->send(new \App\Mail\TopUpPendingMail($user, $transaction, $snapToken));
-
-            return $this->success('Top up initiated', [
-                'transaction' => $transaction,
-                'snap_token' => $snapToken
-            ], 201);
         } catch (\Exception $e) {
-            // If failed to generate token, we might want to fail the transaction
+            // Failed to generate Midtrans token — mark transaction failed
             $transaction->status = 'failed';
             $transaction->save();
-            return $this->error('Failed to generate Midtrans snap token: ' . $e->getMessage(), null, 400);
+            return $this->error('Gagal membuat Midtrans snap token: ' . $e->getMessage(), null, 400);
         }
+
+        // Send email in separate try-catch so SMTP timeout doesn't block the response
+        try {
+            Mail::to($user->email)->send(new \App\Mail\TopUpPendingMail($user, $transaction, $snapToken));
+        } catch (\Exception $e) {
+            Log::warning('Gagal mengirim email TopUpPending: ' . $e->getMessage());
+        }
+
+        return $this->success('Top up initiated', [
+            'transaction' => $transaction,
+            'snap_token'  => $snapToken,
+        ], 201);
     }
 
     /**
@@ -81,12 +86,12 @@ class WalletController
         $pin = $data['pin'];
 
         if (!\Illuminate\Support\Facades\Hash::check($pin, $user->pin)) {
-            return $this->error('PIN yang Anda masukkan salah', null, 400);
+            return $this->error('PIN yang Anda masukkan salah.', null, 400);
         }
 
         try {
             $result = $this->transferService->transfer($user, $identifier, $amount);
-            return $this->success('Transfer successful', $result, 201);
+            return $this->success('Transfer berhasil.', $result, 201);
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), null, 400);
         }
@@ -95,10 +100,10 @@ class WalletController
     {
         $user = Auth::user();
         $validated = $request->validate([
-            'promoId' => 'required|string',
+            'promoId'    => 'required|string',
             'promoTitle' => 'required|string',
-            'amount' => 'required|numeric|min:1',
-            'pin' => 'required|string'
+            'amount'     => 'required|numeric|min:1',
+            'pin'        => 'required|string'
         ]);
 
         if (!\Illuminate\Support\Facades\Hash::check($validated['pin'], $user->pin)) {
@@ -107,20 +112,22 @@ class WalletController
 
         try {
             $transaction = $this->walletService->purchasePromo($user, $validated['promoId'], $validated['promoTitle'], (int) $validated['amount']);
-            
-            // Generate a random voucher code
             $voucherCode = strtoupper(\Illuminate\Support\Str::random(10));
-            
-            // Send email
-            Mail::to($user->email)->send(new \App\Mail\PromoVoucherMail($user, $transaction, $voucherCode));
-
-            return $this->success('Promo purchase successful', [
-                'transaction' => $transaction,
-                'voucher_code' => $voucherCode
-            ], 200);
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), null, 400);
         }
+
+        // Send email in separate try-catch so SMTP timeout doesn't block the response
+        try {
+            Mail::to($user->email)->send(new \App\Mail\PromoVoucherMail($user, $transaction, $voucherCode));
+        } catch (\Exception $e) {
+            Log::warning('Gagal mengirim email PromoVoucher: ' . $e->getMessage());
+        }
+
+        return $this->success('Promo purchase successful', [
+            'transaction'  => $transaction,
+            'voucher_code' => $voucherCode,
+        ], 200);
     }
 }
 ?>

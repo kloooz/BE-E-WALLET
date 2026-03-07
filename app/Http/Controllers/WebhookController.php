@@ -61,11 +61,15 @@ class WebhookController extends Controller
 
             // Provide Topup (this function will lock and save the transaction status internally)
             $this->walletService->completeTopUp($transaction);
-            
+
             // Send email
             $user = $transaction->user;
             if ($user) {
-                Mail::to($user->email)->send(new TopUpSuccessMail($user, $transaction));
+                try {
+                    Mail::to($user->email)->send(new TopUpSuccessMail($user, $transaction));
+                } catch (\Exception $mailEx) {
+                    Log::warning('Gagal mengirim email TopUpSuccess (webhook): ' . $mailEx->getMessage());
+                }
             }
 
         } else if ($transactionStatus == 'cancel' || $transactionStatus == 'deny' || $transactionStatus == 'expire') {

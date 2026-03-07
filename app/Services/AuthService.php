@@ -47,17 +47,32 @@ class AuthService
      * @param array $data Validated data from LoginRequest
      * @return \Laravel\Sanctum\PersonalAccessToken|null
      */
-    public function login(array $data)
+    public function login(array $data): array
     {
         $identifier = $data['identifier'];
-        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-        $credentials = [$field => $identifier, 'password' => $data['password']];
-        if (!Auth::attempt($credentials)) {
-            return null;
+        // Determine field: email, phone (all digits), or username
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $field = 'email';
+        } elseif (ctype_digit($identifier)) {
+            $field = 'phone';
+        } else {
+            $field = 'username';
         }
-        $user = Auth::user();
-        return $user->createToken('auth_token');
+
+        // Check if user exists
+        $user = User::where($field, $identifier)->first();
+        if (!$user) {
+            return ['success' => false, 'message' => 'Akun tidak ditemukan. Periksa kembali email, atau username yang Anda masukkan.'];
+        }
+
+        // Check password
+        if (!Hash::check($data['password'], $user->password)) {
+            return ['success' => false, 'message' => 'Password salah. Silakan coba lagi atau gunakan Lupa Password.'];
+        }
+
+        $token = $user->createToken('auth_token');
+        return ['success' => true, 'token' => $token];
     }
 
     /**
